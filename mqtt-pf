@@ -1,0 +1,96 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          mqtt-pf
+# Required-Start:    $syslog $network
+# Required-Stop:     $syslog $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Port forward for MQTT protocol
+### END INIT INFO
+
+#
+# Author:	Andreas Olsson <andreas@arrakis.se>
+# Version:	@(#)autossh_tunnel.foo  0.1  27-Aug-2008  andreas@arrakis.se
+# modified : 13-Feb-2015 mqtt.and@gmail.com #     just for ssh tunneling,
+#            use system-wide configuration file /etc/ssh/ssh_config
+#            to specify the destination.
+# For each tunnel; make a uniquely named copy of this template.
+
+## SETTINGS
+#
+# specify a host name in /etc/ssh/ssh_config,
+# and also the ssh-key for connection must be located in /etc/ssh/
+TUNNEL="MyBroker"
+# You must use the real autossh binary, not a wrapper.
+DAEMON=/usr/bin/ssh
+#
+## END SETTINGS
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+NAME=`basename $0`
+# NAME is always including the extension of $0
+# the script should be named without extension for good looking
+PIDFILE=/var/run/${NAME}.pid
+SCRIPTNAME=/etc/init.d/${NAME}
+DESC="SSH Tunnel for MQTT protocol"
+
+# exit when test result = false
+test -x $DAEMON || exit 0
+
+export MQTT_PF_PIDFILE=${PIDFILE}
+ASOPT="-N "${TUNNEL}
+
+#	Function that starts the daemon/service.
+#
+#  ssh command is not able to make a pid file with -f (force background) option.
+#  To obtain pid file properly, put --background, --make-pidfile option on the start-stop-deamon command,
+#    --background option is forcing ssh process started without -f option into background.
+
+d_start() {
+	start-stop-daemon --start --quiet --background --pidfile $PIDFILE \
+		--make-pidfile --exec $DAEMON -- $ASOPT
+	if [ $? -gt 0 ]; then
+	    echo -n " not started (or already running)"
+	else
+	    sleep 1
+	    start-stop-daemon --stop --quiet --pidfile $PIDFILE \
+		--test --exec $DAEMON > /dev/null || echo -n " not started"
+	fi
+
+}
+
+#	Function that stops the daemon/service.
+d_stop() {
+	start-stop-daemon --stop --quiet --pidfile $PIDFILE \
+		--exec $DAEMON \
+		|| echo -n " not running"
+}
+
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: $NAME"
+	d_start
+	echo "."
+	;;
+  stop)
+	echo -n "Stopping $DESC: $NAME"
+	d_stop
+	echo "."
+	;;
+
+  restart)
+	echo -n "Restarting $DESC: $NAME"
+	d_stop
+	sleep 1
+	d_start
+	echo "."
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
+	exit 3
+	;;
+esac
+
+exit 0
