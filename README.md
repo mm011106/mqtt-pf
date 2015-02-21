@@ -5,7 +5,7 @@ init.d script for MQTT port forwarding
 
 ```
 Local port 22883 is forwarded to 1883 port of the remote host.
-the key for encryption must be located in /etc/ssh.
-/etc/ssh/ssh_config must contain the connection configuration for the host.
+the key for encryption must be non-path-phrase.
+ssh config file for the portforward connection should be prepared.
 ```
 
