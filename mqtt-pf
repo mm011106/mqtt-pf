@@ -1,7 +1,7 @@
 #! /bin/sh
 ### BEGIN INIT INFO
 # Provides:          mqtt-pf
-# Required-Start:    $syslog $network
+# Required-Start:    $syslog $network $all
 # Required-Stop:     $syslog $network
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
@@ -12,8 +12,8 @@
 # Author:	Andreas Olsson <andreas@arrakis.se>
 # Version:	@(#)autossh_tunnel.foo  0.1  27-Aug-2008  andreas@arrakis.se
 # modified : 13-Feb-2015 mqtt.and@gmail.com #     just for ssh tunneling,
-#            use system-wide configuration file /etc/ssh/ssh_config
-#            to specify the destination.
+#
+#
 # For each tunnel; make a uniquely named copy of this template.
 
 ## SETTINGS
@@ -22,7 +22,7 @@
 # and also the ssh-key for connection must be located in /etc/ssh/
 TUNNEL="MyBroker"
 # You must use the real autossh binary, not a wrapper.
-DAEMON=/usr/bin/ssh
+DAEMON=/usr/lib/autossh/autossh
 #
 ## END SETTINGS
 
@@ -39,16 +39,19 @@ DESC="SSH Tunnel for MQTT protocol"
 test -x $DAEMON || exit 0
 
 export MQTT_PF_PIDFILE=${PIDFILE}
-ASOPT="-N "${TUNNEL}
+# Options for the daemon command 
+#   SSH_CONFIG_FILE should be including the path.
+ASOPT="-M 0 -N -F SSH_CONFIG_FILE "${TUNNEL}
 
 #	Function that starts the daemon/service.
 #
 #  ssh command is not able to make a pid file with -f (force background) option.
 #  To obtain pid file properly, put --background, --make-pidfile option on the start-stop-deamon command,
 #    --background option is forcing ssh process started without -f option into background.
+#  the Daemon is going to be executed on the user designated by --chuid and --user option. 
 
 d_start() {
-	start-stop-daemon --start --quiet --background --pidfile $PIDFILE \
+	start-stop-daemon --start --quiet --chuid USENAME:GRPNAME --user USERNAME --background --pidfile $PIDFILE \
 		--make-pidfile --exec $DAEMON -- $ASOPT
 	if [ $? -gt 0 ]; then
 	    echo -n " not started (or already running)"
